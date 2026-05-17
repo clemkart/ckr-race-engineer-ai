@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Race Engineer AI — Clem Kart Racing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#D9171D;--red-dark:#A51115;--red-glow:rgba(217,23,29,0.28);
+  --black:#070707;--b2:#0F0F0F;--b3:#161616;--b4:#1C1C1C;--b5:#222;
+  --w:rgb(242,237,232);--wd:rgba(242,237,232,0.6);--wf:rgba(242,237,232,0.08);--wf2:rgba(242,237,232,0.04);
+  --gold:#C9A84C;--green:#2ECC71;--orange:#E67E22;
+  --fd:'Bebas Neue',sans-serif;--fc:'Barlow Condensed',sans-serif;--fb:'Barlow',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--w);font-family:var(--fb);overflow-x:hidden;min-height:100vh;}
+
+/* NAV */
+nav{background:rgba(7,7,7,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--wf);padding:16px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nlogo{font-family:var(--fd);font-size:1.3rem;letter-spacing:.06em;color:var(--w);text-decoration:none;}
+.nlogo span{color:var(--red);}
+.nav-badge{font-family:var(--fc);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);padding:4px 10px;}
+.nav-back{font-family:var(--fc);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--wd);text-decoration:none;transition:color .2s;}
+.nav-back:hover{color:var(--w);}
+
+/* LAYOUT */
+.app-layout{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 57px);}
+@media(max-width:900px){.app-layout{grid-template-columns:1fr;}}
+
+/* PANEL GAUCHE - INPUTS */
+.panel-left{background:var(--b2);border-right:1px solid var(--wf);padding:32px 28px;overflow-y:auto;max-height:calc(100vh - 57px);position:sticky;top:57px;}
+@media(max-width:900px){.panel-left{max-height:none;position:static;}}
+
+.panel-title{font-family:var(--fd);font-size:1.8rem;letter-spacing:.04em;margin-bottom:6px;}
+.panel-sub{font-family:var(--fc);font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:28px;}
+
+.section-label{font-family:var(--fc);font-size:.72rem;letter-spacing:.3em;text-transform:uppercase;color:var(--wd);margin-bottom:12px;margin-top:24px;padding-bottom:6px;border-bottom:1px solid var(--wf);}
+.section-label:first-of-type{margin-top:0;}
+
+/* FORM ELEMENTS */
+.field{margin-bottom:14px;}
+.field label{display:block;font-family:var(--fc);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--wd);margin-bottom:6px;}
+.field select, .field input[type="number"], .field input[type="text"]{
+  width:100%;background:var(--b3);border:1px solid var(--wf);color:var(--w);
+  font-family:var(--fb);font-size:.9rem;padding:10px 12px;
+  -webkit-appearance:none;appearance:none;outline:none;
+  transition:border-color .2s;
+}
+.field select:focus, .field input:focus{border-color:var(--red);}
+.field select option{background:var(--b3);}
+
+/* SLIDERS */
+.slider-wrap{display:flex;align-items:center;gap:12px;}
+.slider-wrap input[type="range"]{
+  flex:1;-webkit-appearance:none;appearance:none;height:3px;background:var(--wf);outline:none;
+}
+.slider-wrap input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--red);cursor:pointer;
+}
+.slider-wrap input[type="range"]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--red);cursor:pointer;border:none;
+}
+.slider-val{font-family:var(--fd);font-size:1.1rem;color:var(--gold);min-width:32px;text-align:right;}
+
+/* RADIO BUTTONS custom */
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-group input[type="radio"]{display:none;}
+.radio-group label{
+  font-family:var(--fc);font-size:.78rem;letter-spacing:.15em;text-transform:uppercase;
+  padding:7px 14px;border:1px solid var(--wf);color:var(--wd);cursor:pointer;transition:all .2s;
+}
+.radio-group input[type="radio"]:checked + label{
+  background:var(--red);border-color:var(--red);color:var(--w);
+}
+
+/* TEXTAREA */
+.field textarea{
+  width:100%;background:var(--b3);border:1px solid var(--wf);color:var(--w);
+  font-family:var(--fb);font-size:.88rem;padding:10px 12px;resize:vertical;
+  min-height:80px;outline:none;transition:border-color .2s;line-height:1.6;
+}
+.field textarea:focus{border-color:var(--red);}
+.field textarea::placeholder{color:rgba(242,237,232,0.3);}
+
+/* CTA BUTTON */
+.btn-analyze{
+  width:100%;margin-top:20px;padding:16px;
+  font-family:var(--fd);font-size:1.4rem;letter-spacing:.06em;
+  background:var(--red);color:var(--w);border:none;cursor:pointer;
+  position:relative;overflow:hidden;transition:box-shadow .3s;
+}
+.btn-analyze::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.1);transform:translateX(-110%) skewX(-15deg);transition:transform .4s;}
+.btn-analyze:hover::after{transform:translateX(110%) skewX(-15deg);}
+.btn-analyze:hover{box-shadow:0 0 36px var(--red-glow);}
+.btn-analyze:disabled{opacity:.5;cursor:not-allowed;}
+.btn-analyze:disabled::after{display:none;}
+
+/* PANEL DROIT - OUTPUT + CHAT */
+.panel-right{display:flex;flex-direction:column;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--wf);background:var(--b2);}
+.tab-btn{
+  font-family:var(--fc);font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;
+  padding:16px 28px;color:var(--wd);background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+}
+.tab-btn.active{color:var(--w);border-bottom-color:var(--red);}
+
+/* DIAGNOSTIC VIEW */
+.diag-area{flex:1;padding:32px 36px;overflow-y:auto;}
+@media(max-width:900px){.diag-area{padding:24px 20px;}}
+
+.diag-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;opacity:.5;}
+.diag-empty-icon{font-size:3rem;margin-bottom:16px;}
+.diag-empty h3{font-family:var(--fd);font-size:2rem;letter-spacing:.04em;margin-bottom:8px;}
+.diag-empty p{font-family:var(--fc);font-size:.88rem;letter-spacing:.1em;color:var(--wd);}
+
+/* DIAGNOSTIC RESULT */
+.diag-result{display:none;}
+.diag-result.visible{display:block;}
+
+.diag-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;}
+.diag-timestamp{font-family:var(--fc);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--wd);}
+.diag-severity{font-family:var(--fc);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;padding:4px 12px;}
+.sev-low{background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);}
+.sev-mid{background:rgba(230,126,34,.15);color:var(--orange);border:1px solid rgba(230,126,34,.3);}
+.sev-high{background:rgba(217,23,29,.15);color:var(--red);border:1px solid rgba(217,23,29,.3);}
+
+.diag-section{margin-bottom:28px;}
+.diag-section-title{font-family:var(--fd);font-size:1.3rem;letter-spacing:.04em;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.diag-section-title::after{content:'';flex:1;height:1px;background:var(--wf);}
+
+.diag-card{background:var(--b3);border:1px solid var(--wf);padding:18px 20px;margin-bottom:10px;}
+.diag-card-title{font-family:var(--fc);font-size:.82rem;letter-spacing:.18em;text-transform:uppercase;color:var(--wd);margin-bottom:8px;}
+.diag-card-body{font-size:.95rem;line-height:1.7;color:var(--w);}
+.diag-card-body strong{color:var(--gold);}
+
+.action-list{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.action-item{display:flex;align-items:flex-start;gap:12px;background:var(--b4);padding:12px 16px;}
+.action-num{font-family:var(--fd);font-size:1.2rem;color:var(--red);min-width:24px;}
+.action-text{font-size:.92rem;line-height:1.6;color:var(--w);}
+.action-text small{display:block;font-size:.78rem;color:var(--wd);margin-top:2px;}
+
+/* CHAT VIEW */
+.chat-area{flex:1;display:flex;flex-direction:column;min-height:0;}
+.chat-messages{flex:1;padding:24px 36px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;min-height:400px;}
+@media(max-width:900px){.chat-messages{padding:20px;}}
+
+.msg{max-width:78%;display:flex;flex-direction:column;gap:4px;}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg.ai{align-self:flex-start;align-items:flex-start;}
+.msg-bubble{padding:12px 16px;font-size:.92rem;line-height:1.65;}
+.msg.user .msg-bubble{background:var(--red);color:var(--w);}
+.msg.ai .msg-bubble{background:var(--b3);border:1px solid var(--wf);color:var(--w);}
+.msg.ai .msg-bubble strong{color:var(--gold);}
+.msg-meta{font-family:var(--fc);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--wd);}
+
+.chat-input-wrap{border-top:1px solid var(--wf);background:var(--b2);padding:16px 36px;}
+@media(max-width:900px){.chat-input-wrap{padding:16px 20px;}}
+.chat-input-row{display:flex;gap:10px;}
+.chat-input{
+  flex:1;background:var(--b3);border:1px solid var(--wf);color:var(--w);
+  font-family:var(--fb);font-size:.9rem;padding:12px 16px;outline:none;transition:border-color .2s;
+}
+.chat-input:focus{border-color:var(--red);}
+.chat-input::placeholder{color:rgba(242,237,232,0.3);}
+.chat-send{
+  background:var(--red);border:none;color:var(--w);padding:12px 20px;cursor:pointer;
+  font-family:var(--fc);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;
+  transition:background .2s;
+}
+.chat-send:hover{background:var(--red-dark);}
+
+/* SESSION HISTORY */
+.history-bar{background:var(--b2);border-bottom:1px solid var(--wf);padding:10px 36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.history-label{font-family:var(--fc);font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--wd);}
+.history-chip{font-family:var(--fc);font-size:.72rem;letter-spacing:.12em;padding:4px 10px;background:var(--b4);border:1px solid var(--wf);cursor:pointer;color:var(--wd);transition:all .2s;}
+.history-chip:hover,.history-chip.active{background:var(--b3);border-color:var(--red);color:var(--w);}
+
+/* LOADING */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(7,7,7,.7);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-overlay.visible{display:flex;}
+.loading-spinner{width:48px;height:48px;border:3px solid var(--wf);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:var(--fc);font-size:.88rem;letter-spacing:.22em;text-transform:uppercase;color:var(--wd);}
+
+/* QUICK TIPS */
+.quick-tips{margin-top:16px;}
+.tip-item{font-family:var(--fc);font-size:.75rem;letter-spacing:.1em;color:var(--wd);padding:6px 0;border-bottom:1px solid var(--wf2);display:flex;gap:8px;}
+.tip-item::before{content:'→';color:var(--red);flex-shrink:0;}
+
+/* Typing indicator */
+.typing{display:flex;gap:4px;padding:14px 16px;background:var(--b3);border:1px solid var(--wf);align-self:flex-start;width:fit-content;}
+.typing span{width:6px;height:6px;background:var(--wd);border-radius:50%;animation:blink 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nlogo">CLEM<span>.</span>KART</a>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="nav-badge">Race Engineer AI</span>
+    <a href="/" class="nav-back">← Site principal</a>
+  </div>
+</nav>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Analyse en cours...</div>
+</div>
+
+<!-- APP LAYOUT -->
+<div class="app-layout">
+
+  <!-- PANEL GAUCHE -->
+  <aside class="panel-left">
+    <div class="panel-title">SETUP</div>
+    <div class="panel-sub">Diagnostic & Réglages</div>
+
+    <!-- CONDITIONS PISTE -->
+    <div class="section-label">Conditions piste</div>
+
+    <div class="field">
+      <label>Température air</label>
+      <div class="slider-wrap">
+        <input type="range" id="temp-air" min="0" max="40" value="20" step="1" oninput="syncSlider(this,'val-temp-air','°C')">
+        <span class="slider-val" id="val-temp-air">20°C</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>État de la piste</label>
+      <div class="radio-group">
+        <input type="radio" name="track-state" id="ts-cold" value="cold_dry" checked>
+        <label for="ts-cold">Froid / Propre</label>
+        <input type="radio" name="track-state" id="ts-hot" value="hot_rubber">
+        <label for="ts-hot">Chaud / Caoutchouc</label>
+        <input type="radio" name="track-state" id="ts-wet" value="wet">
+        <label for="ts-wet">Mouillé</label>
+        <input type="radio" name="track-state" id="ts-mid" value="mixed">
+        <label for="ts-mid">Variable</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Type de circuit</label>
+      <div class="radio-group">
+        <input type="radio" name="circuit-type" id="ct-tech" value="technique" checked>
+        <label for="ct-tech">Technique</label>
+        <input type="radio" name="circuit-type" id="ct-speed" value="rapide">
+        <label for="ct-speed">Rapide</label>
+        <input type="radio" name="circuit-type" id="ct-mix" value="mixte">
+        <label for="ct-mix">Mixte</label>
+      </div>
+    </div>
+
+    <!-- SETUP ACTUEL -->
+    <div class="section-label">Setup actuel</div>
+
+    <div class="field">
+      <label>Pression pneus avant (bar)</label>
+      <div class="slider-wrap">
+        <input type="range" id="pres-av" min="0.70" max="1.20" value="0.92" step="0.01" oninput="syncSlider(this,'val-pres-av',' bar')">
+        <span class="slider-val" id="val-pres-av">0.92 bar</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Pression pneus arrière (bar)</label>
+      <div class="slider-wrap">
+        <input type="range" id="pres-ar" min="0.70" max="1.20" value="0.88" step="0.01" oninput="syncSlider(this,'val-pres-ar',' bar')">
+        <span class="slider-val" id="val-pres-ar">0.88 bar</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Voie arrière</label>
+      <div class="radio-group">
+        <input type="radio" name="voie-ar" id="va-narrow" value="narrow">
+        <label for="va-narrow">Étroite (137.5)</label>
+        <input type="radio" name="voie-ar" id="va-mid" value="mid" checked>
+        <label for="va-mid">Médiane</label>
+        <input type="radio" name="voie-ar" id="va-wide" value="wide">
+        <label for="va-wide">Large (140)</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Rigidité châssis (global)</label>
+      <div class="slider-wrap">
+        <input type="range" id="chassis-stiff" min="1" max="5" value="3" step="1" oninput="syncSlider(this,'val-chassis-stiff','')">
+        <span class="slider-val" id="val-chassis-stiff">3</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;">
+        <span style="font-family:var(--fc);font-size:.65rem;color:var(--wd);">Très souple</span>
+        <span style="font-family:var(--fc);font-size:.65rem;color:var(--wd);">Neutre</span>
+        <span style="font-family:var(--fc);font-size:.65rem;color:var(--wd);">Très rigide</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Barre avant</label>
+      <div class="radio-group">
+        <input type="radio" name="front-bar" id="fb-none" value="none">
+        <label for="fb-none">Sans barre</label>
+        <input type="radio" name="front-bar" id="fb-round" value="round" checked>
+        <label for="fb-round">Ronde</label>
+        <input type="radio" name="front-bar" id="fb-flat" value="flat">
+        <label for="fb-flat">Plate</label>
+      </div>
+    </div>
+
+    <!-- RESSENTI PILOTE -->
+    <div class="section-label">Ressenti pilote</div>
+
+    <div class="field">
+      <label>Comportement dominant</label>
+      <select id="behavior">
+        <option value="">-- Sélectionner --</option>
+        <option value="understeer_entry">Sous-virage entrée de courbe</option>
+        <option value="understeer_mid">Sous-virage milieu de courbe</option>
+        <option value="oversteer_entry">Survirage entrée de courbe</option>
+        <option value="oversteer_exit">Survirage sortie (accélération)</option>
+        <option value="no_rotation">Pas de rotation — kart ne pivote pas</option>
+        <option value="too_much_rotation">Trop de rotation — difficile à contrôler</option>
+        <option value="good_entry_bad_exit">Bonne entrée, mauvaise sortie</option>
+        <option value="general_lack_of_grip">Manque général de grip</option>
+        <option value="balanced">Kart équilibré — chercher la performance</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Intensité du problème</label>
+      <div class="slider-wrap">
+        <input type="range" id="intensity" min="1" max="10" value="5" step="1" oninput="syncSlider(this,'val-intensity','/10')">
+        <span class="slider-val" id="val-intensity">5/10</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Commentaire libre (optionnel)</label>
+      <textarea id="pilot-notes" placeholder="Ex: L'arrière part surtout au freinage du grand virage, mais ça va en chicane. La 3e session était pire que la 2e..."></textarea>
+    </div>
+
+    <button class="btn-analyze" id="btn-analyze" onclick="runDiagnostic()">
+      ANALYSER LE SETUP →
+    </button>
+
+    <!-- QUICK TIPS -->
+    <div class="quick-tips">
+      <div class="tip-item">Identifie le problème dominant en premier</div>
+      <div class="tip-item">Un réglage à la fois — mesure l'impact</div>
+      <div class="tip-item">Note tout, même les sessions "normales"</div>
+    </div>
+  </aside>
+
+  <!-- PANEL DROIT -->
+  <main class="panel-right">
+
+    <!-- HISTORIQUE SESSIONS -->
+    <div class="history-bar" id="history-bar">
+      <span class="history-label">Sessions :</span>
+      <span id="history-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></span>
+      <span style="font-family:var(--fc);font-size:.7rem;color:rgba(242,237,232,0.25);letter-spacing:.1em;">Aucune session enregistrée</span>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-diag" onclick="switchTab('diag')">Diagnostic</button>
+      <button class="tab-btn" id="tab-chat" onclick="switchTab('chat')">Chatbot Karting</button>
+    </div>
+
+    <!-- DIAGNOSTIC VIEW -->
+    <div id="view-diag" class="diag-area">
+      <div class="diag-empty" id="diag-empty">
+        <div class="diag-empty-icon">🏁</div>
+        <h3>PRÊT À ANALYSER</h3>
+        <p>Remplis le setup et le ressenti pilote,<br>puis clique sur ANALYSER.</p>
+      </div>
+      <div class="diag-result" id="diag-result"></div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div id="view-chat" style="display:none;flex:1;flex-direction:column;display:none;" class="chat-area">
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg ai">
+          <div class="msg-bubble">
+            Salut. Je suis ton ingénieur de course virtuel.<br><br>
+            Pose-moi n'importe quelle question sur les réglages, la conduite, les pneus, la mécanique... Je m'appuie sur ta théorie et les principes du guide.<br><br>
+            <strong>Ex :</strong> "Pourquoi mon kart sous-vire en milieu de virage ?" ou "Quelle chasse pour un circuit technique sous la pluie ?"
+          </div>
+          <div class="msg-meta">Race Engineer AI</div>
+        </div>
+      </div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Pose ta question sur les réglages..." onkeypress="if(event.key==='Enter')sendChat()">
+          <button class="chat-send" onclick="sendChat()">Envoyer</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ============================================================
+// KNOWLEDGE BASE
+// ============================================================
+const KB = {
+  philosophy: {
+    grip_no_grip: {
+      high_grip: "Piste chaude, caoutchouc posé. Risque : kart trop rigide = roue AR intérieure ne se décolle pas = pas de rotation.",
+      low_grip: "Piste froide ou propre. Risque : kart trop souple = trop de roulis = imprécision.",
+      paradox: "En no-grip, on rigidifie le châssis. En grip, on l'assouplit. C'est contre-intuitif mais c'est la loi du karting.",
+      OTK_philosophy: "La philosophie OTK : rigidifier en low-grip pour forcer la désolidarisation roue AR intérieure par la rigidité plutôt que par le grip."
+    }
+  },
+  tires: {
+    principle: "La pression froide ne vaut rien. C'est la pression chaude en charge qui compte. On vise un delta de 0.15 bar entre froid et chaud.",
+    too_high: "Pneu trop dur, zone de contact réduite, moins de grip, kart nerveux.",
+    too_low: "Pneu trop mou, trop de déformation, chaleur excessive, sensation de 'coton'.",
+    warm_up: "En qualifs, sortir des stands le plus tard possible pour que le pneu soit à température au tour lancé."
+  },
+  chassis: {
+    principle: "Le kart n'a pas de barres stabilisatrices. La rotation vient du délestage de la roue arrière intérieure.",
+    rear_axle: {
+      more_in_hub: "Plus d'axe dans le moyeu = plus rigide = moins de rotation = no-grip",
+      less_in_hub: "Moins d'axe = plus souple = plus de rotation = high-grip"
+    },
+    front_bar: {
+      flat: "Barre plate = rigide = plus de réaction du train avant = no-grip",
+      round: "Barre ronde = souple = absorbe mieux = high-grip",
+      none: "Sans barre = maximum souplesse = grip extrême"
+    },
+    bumper: "Pare-chocs serré = plus rigide = plus de grip en no-grip. Desserré = plus souple = high-grip."
+  },
+  caster: {
+    less: "Moins de chasse : kart plus agile, circuits techniques, virages serrés",
+    more: "Plus de chasse : stabilité haute vitesse, circuits rapides",
+    rain: "En pluie : augmenter la chasse pour stabilité"
+  },
+  track_width: {
+    rear_narrow: "Voie AR étroite (137.5) : plus incisif, plus de grip, no-grip",
+    rear_wide: "Voie AR large (140) : plus stable, high-grip, circuits rapides",
+    front_wider: "Voie AV plus large : plus d'incisivité en entrée"
+  },
+  carburetor: {
+    hot: "Température > 25°C → gicleur 120-125 (air chaud = moins dense)",
+    cold: "Température < 15°C → gicleur 135-145 (air froid = plus dense)",
+    too_lean: "Trop maigre = surchauffe, coups, risque gripage",
+    too_rich: "Trop riche = perte puissance, bougie noire"
+  },
+  symptoms: {
+    understeer: "Le kart ne rentre pas en virage. Front décroche. Causes : pression AV trop haute, voie AV trop étroite, chasse insuffisante.",
+    oversteer: "L'arrière part. Kart pivote trop. Causes : pression AR trop haute, voie AR trop large, châssis trop rigide.",
+    no_rotation: "Kart entre mais ne pivote pas. Roue AR intérieure ne se décolle pas. Rigidifier AR ou réduire pression.",
+    too_much_rotation: "Kart pivote trop. Assouplir AR, baisser pression, réduire chasse."
+  },
+  diagnostic_matrix: {
+    understeer_entry: {
+      label: "Sous-virage entrée de courbe",
+      causes: ["Pression pneus avant trop élevée (le pneu ne chauffe pas)", "Voie avant trop étroite", "Chasse insuffisante pour le circuit", "Ride height trop bas"],
+      solutions: [
+        { priority: 1, action: "Baisser pression avant de 0.05 bar", detail: "Le pneu avant a besoin de plus de déformation pour mordre" },
+        { priority: 2, action: "Élargir la voie avant (spacers)", detail: "Plus de voie = plus d'appui géométrique en entrée" },
+        { priority: 3, action: "Augmenter la chasse", detail: "Plus de chasse = meilleur soulèvement AR intérieur = aide la rotation" }
+      ],
+      philosophy: "Le train avant décroche parce qu'il manque de grip ou de géométrie pour créer la rotation."
+    },
+    understeer_mid: {
+      label: "Sous-virage milieu de courbe",
+      causes: ["Châssis trop rigide (roue AR intérieure ne se décolle pas)", "Pression arrière trop basse (manque de rigidité latérale AR)", "Voie arrière trop large"],
+      solutions: [
+        { priority: 1, action: "Assouplir le châssis : passer à barre ronde ou retirer barre avant", detail: "En high-grip, le châssis rigide bloque la rotation" },
+        { priority: 2, action: "Monter légèrement la pression arrière (+0.05)", detail: "Pneu AR plus gonflé = meilleure rigidité latérale = délestage plus net" },
+        { priority: 3, action: "Réduire la voie arrière", detail: "Voie étroite = plus incisif = aide la rotation" }
+      ],
+      philosophy: "Le kart entre mais l'arrière reste collé. La roue AR intérieure doit se soulever pour permettre la rotation — c'est mécanique."
+    },
+    oversteer_entry: {
+      label: "Survirage entrée de courbe",
+      causes: ["Pression arrière trop élevée (pneu chaud glisse)", "Chasse trop élevée", "Châssis trop rigide pour les conditions"],
+      solutions: [
+        { priority: 1, action: "Baisser pression arrière de 0.05 bar", detail: "Pression trop haute = glissement prématuré du pneu AR" },
+        { priority: 2, action: "Réduire la chasse", detail: "Moins de soulèvement AR = moins de risque de décrochage arrière" },
+        { priority: 3, action: "Assouplir légèrement le châssis", detail: "Châssis rigide en high-grip = survirage chronique" }
+      ],
+      philosophy: "L'arrière part parce que le pneu AR atteint sa limite de grip avant que le pilote le demande."
+    },
+    oversteer_exit: {
+      label: "Survirage sortie (accélération)",
+      causes: ["Pression arrière trop basse (surchauffe, déformation)", "Voie arrière trop étroite", "Châssis trop souple = trop de roulis sous accélération"],
+      solutions: [
+        { priority: 1, action: "Monter pression arrière (+0.05 à +0.10)", detail: "Le pneu AR perd de la rigidité sous accélération s'il est sous-gonflé" },
+        { priority: 2, action: "Élargir légèrement la voie arrière", detail: "Plus de voie = plus de stabilité en sortie" },
+        { priority: 3, action: "Rigidifier légèrement : barre plate ou plus d'axe dans moyeu", detail: "Châssis trop souple = roulis excessif sous accélération = survirage" }
+      ],
+      philosophy: "L'arrière part à l'accélération parce que les pneus AR ne supportent pas le couple + le transfert de charge."
+    },
+    no_rotation: {
+      label: "Pas de rotation — kart ne pivote pas",
+      causes: ["Roue AR intérieure ne se décolle pas (châssis trop souple en conditions)", "Pression AR trop basse", "Voie AR trop large"],
+      solutions: [
+        { priority: 1, action: "Rigidifier l'arrière : plus d'axe dans le moyeu", detail: "C'est le réglage principal pour forcer le délestage de la roue AR int." },
+        { priority: 2, action: "Resserrer le pare-chocs arrière", detail: "Rigidifie le châssis globalement" },
+        { priority: 3, action: "Monter légèrement la pression arrière", detail: "Pneu plus gonflé = meilleur transfert de charge = délestage plus net" },
+        { priority: 4, action: "Réduire la voie arrière", detail: "Voie étroite = pivot plus incisif = rotation facilitée" }
+      ],
+      philosophy: "La rotation du kart est mécanique, pas au volant. Si le kart ne pivote pas, c'est que la roue AR intérieure reste au sol. Il faut la forcer à se soulever via la rigidité ou la géométrie."
+    },
+    too_much_rotation: {
+      label: "Trop de rotation",
+      causes: ["Châssis trop rigide pour le niveau de grip actuel", "Pression arrière trop haute", "Chasse excessive"],
+      solutions: [
+        { priority: 1, action: "Assouplir l'arrière : retirer axe du moyeu", detail: "Moins de rigidité = roue AR intérieure reste en contact = moins de rotation" },
+        { priority: 2, action: "Baisser pression arrière (-0.05)", detail: "Pneu plus mou = moins de rigidité latérale = rotation plus douce" },
+        { priority: 3, action: "Réduire la chasse", detail: "Moins de soulèvement AR = moins de rotation induite géométriquement" }
+      ],
+      philosophy: "Trop de rotation = l'arrière se déleste trop vite ou trop fort. Le grip disponible ne peut pas absorber."
+    },
+    good_entry_bad_exit: {
+      label: "Bonne entrée, mauvaise sortie",
+      causes: ["Pression AR trop haute → pneu surchauffe en milieu de session", "Châssis trop rigide pour les conditions de grip en sortie"],
+      solutions: [
+        { priority: 1, action: "Baisser pression arrière (-0.05 à -0.10)", detail: "Le pneu surchauffe quand il glisse trop → baisse son coefficient de grip" },
+        { priority: 2, action: "Vérifier température pneus après session (doit être uniforme)", detail: "Surchauffe externe = trop de pression. Surchauffe interne = sous-gonflé" }
+      ],
+      philosophy: "La piste gagne en grip au fil des tours mais ta pression pneus doit évoluer aussi."
+    },
+    general_lack_of_grip: {
+      label: "Manque général de grip",
+      causes: ["Piste froide / propre (no-grip global)", "Pneus pas à température", "Setup trop souple pour les conditions"],
+      solutions: [
+        { priority: 1, action: "Rigidifier le châssis globalement (barre plate + plus d'axe)", detail: "En no-grip, la rigidité force la mécanique à travailler" },
+        { priority: 2, action: "Réduire la voie arrière (137.5)", detail: "Plus incisif = plus de grip mécanique" },
+        { priority: 3, action: "Abaisser la garde au sol", detail: "Centre de gravité plus bas = moins de roulis = plus de grip" },
+        { priority: 4, action: "Sortir plus tard des stands pour pneus chauds (qualifs)", detail: "Le pneu doit être à température au tour lancé, pas au 3e tour" }
+      ],
+      philosophy: "En piste froide, la rigidité compense le manque de grip. C'est contre-intuitif mais c'est la philosophie OTK."
+    },
+    balanced: {
+      label: "Kart équilibré",
+      causes: [],
+      solutions: [
+        { priority: 1, action: "Optimiser la stratégie pression pneus pour les qualifs", detail: "Sortir le plus tard possible des stands" },
+        { priority: 2, action: "Ajuster le gicleur selon la température du jour", detail: "< 15°C : 135-145 / 15-25°C : 125-135 / > 25°C : 120-125" },
+        { priority: 3, action: "Vérifier la cohérence du setup avec le type de circuit", detail: "Circuit technique : voie étroite + moins de chasse / Rapide : voie large + plus de chasse" }
+      ],
+      philosophy: "Si le kart est équilibré, optimise les petits détails : pression qualifs, gicleur, chasse."
+    }
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let sessions = JSON.parse(localStorage.getItem('re_sessions') || '[]');
+let currentTab = 'diag';
+let chatHistory = [];
+let activeSessionIdx = -1;
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function syncSlider(el, valId, suffix) {
+  const v = parseFloat(el.value);
+  document.getElementById(valId).textContent = (suffix.includes('bar') ? v.toFixed(2) : v) + suffix;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-diag').classList.toggle('active', tab === 'diag');
+  document.getElementById('tab-chat').classList.toggle('active', tab === 'chat');
+  document.getElementById('view-diag').style.display = tab === 'diag' ? 'block' : 'none';
+  document.getElementById('view-chat').style.display = tab === 'chat' ? 'flex' : 'none';
+  if (tab === 'chat') {
+    document.getElementById('view-chat').style.flexDirection = 'column';
+    scrollChat();
+  }
+}
+
+function showLoading(text = 'Analyse en cours...') {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading').classList.add('visible');
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.remove('visible');
+}
+
+function getFormData() {
+  return {
+    temp: parseInt(document.getElementById('temp-air').value),
+    trackState: document.querySelector('input[name="track-state"]:checked').value,
+    circuitType: document.querySelector('input[name="circuit-type"]:checked').value,
+    presAv: parseFloat(document.getElementById('pres-av').value),
+    presAr: parseFloat(document.getElementById('pres-ar').value),
+    voieAr: document.querySelector('input[name="voie-ar"]:checked').value,
+    chassisStiff: parseInt(document.getElementById('chassis-stiff').value),
+    frontBar: document.querySelector('input[name="front-bar"]:checked').value,
+    behavior: document.getElementById('behavior').value,
+    intensity: parseInt(document.getElementById('intensity').value),
+    notes: document.getElementById('pilot-notes').value.trim()
+  };
+}
+
+// ============================================================
+// DIAGNOSTIC ENGINE
+// ============================================================
+function runDiagnostic() {
+  const data = getFormData();
+  if (!data.behavior) {
+    document.getElementById('behavior').focus();
+    document.getElementById('behavior').style.borderColor = 'var(--red)';
+    return;
+  }
+
+  showLoading('Analyse du setup...');
+  setTimeout(() => {
+    const result = buildDiagnostic(data);
+    renderDiagnostic(result, data);
+    saveSession(data, result);
+    hideLoading();
+    document.getElementById('diag-empty').style.display = 'none';
+    document.getElementById('diag-result').classList.add('visible');
+  }, 900);
+}
+
+function buildDiagnostic(data) {
+  const matrix = KB.diagnostic_matrix[data.behavior] || KB.diagnostic_matrix.balanced;
+
+  // Analyse des conditions
+  const conditions = [];
+  if (data.trackState === 'cold_dry') conditions.push({ type: 'warning', text: 'Piste froide : philosophy rigidification → vérifier si setup assez rigide' });
+  if (data.trackState === 'wet') conditions.push({ type: 'info', text: 'Pluie : augmenter la chasse, assouplir le châssis, pression basse' });
+  if (data.trackState === 'hot_rubber') conditions.push({ type: 'info', text: 'High-grip : risque de rigidité excessive → vérifier souplesse châssis' });
+
+  // Analyse pression
+  const pressureNotes = [];
+  if (data.presAv > 1.05) pressureNotes.push('Pression AV élevée (>' + data.presAv + ' bar) : risque de sous-virage si pneu pas assez chaud');
+  if (data.presAr > 1.00) pressureNotes.push('Pression AR élevée (>' + data.presAr + ' bar) : risque de survirage si piste chaude');
+  if (data.presAv < 0.80) pressureNotes.push('Pression AV basse : possible manque de rigidité latérale avant');
+
+  // Analyse châssis
+  const chassisNotes = [];
+  if (data.chassisStiff >= 4 && data.trackState === 'hot_rubber') {
+    chassisNotes.push('Châssis rigide en high-grip : classique source de sous-virage. Assouplir.');
+  }
+  if (data.chassisStiff <= 2 && data.trackState === 'cold_dry') {
+    chassisNotes.push('Châssis souple en no-grip : contre-intuitif mais rigidifier est la solution.');
+  }
+  if (data.frontBar === 'flat' && data.trackState === 'hot_rubber') {
+    chassisNotes.push('Barre plate en high-grip : peut causer sur-rigidité du train avant.');
+  }
+
+  // Gicleur recommandé
+  let jetting = '';
+  if (data.temp < 15) jetting = '135-145 (temps froid, air dense)';
+  else if (data.temp < 25) jetting = '125-135 (température standard)';
+  else jetting = '120-125 (temps chaud, air moins dense)';
+
+  // Severity
+  let severity = 'low';
+  if (data.intensity >= 7) severity = 'high';
+  else if (data.intensity >= 4) severity = 'mid';
+
+  return { matrix, conditions, pressureNotes, chassisNotes, jetting, severity, data };
+}
+
+function renderDiagnostic(result, data) {
+  const { matrix, conditions, pressureNotes, chassisNotes, jetting, severity } = result;
+
+  const sevLabel = { low: 'Mineur', mid: 'Modéré', high: 'Critique' };
+  const sevClass = { low: 'sev-low', mid: 'sev-mid', high: 'sev-high' };
+
+  const trackLabels = {
+    cold_dry: 'Froid / Propre', hot_rubber: 'Chaud / Caoutchouc',
+    wet: 'Mouillé', mixed: 'Variable'
+  };
+  const circuitLabels = { technique: 'Technique', rapide: 'Rapide', mixte: 'Mixte' };
+
+  let html = `
+    <div class="diag-header">
+      <div class="diag-timestamp">${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})} — ${trackLabels[data.trackState]} · ${circuitLabels[data.circuitType]} · ${data.temp}°C</div>
+      <div class="diag-severity ${sevClass[severity]}">${sevLabel[severity]}</div>
+    </div>
+
+    <div class="diag-section">
+      <div class="diag-section-title">Diagnostic</div>
+      <div class="diag-card">
+        <div class="diag-card-title">Comportement identifié</div>
+        <div class="diag-card-body">
+          <strong>${matrix.label}</strong> — intensité ${data.intensity}/10<br><br>
+          ${matrix.philosophy}
+        </div>
+      </div>
+      ${matrix.causes.length > 0 ? `
+      <div class="diag-card">
+        <div class="diag-card-title">Causes probables</div>
+        <div class="diag-card-body">
+          ${matrix.causes.map(c => `• ${c}`).join('<br>')}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  // Actions prioritaires
+  html += `
+    <div class="diag-section">
+      <div class="diag-section-title">Actions recommandées</div>
+      <ul class="action-list">
+        ${matrix.solutions.map(s => `
+          <li class="action-item">
+            <span class="action-num">${s.priority}</span>
+            <div class="action-text">
+              ${s.action}
+              <small>${s.detail}</small>
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    </div>`;
+
+  // Notes conditions
+  const allNotes = [...conditions, ...pressureNotes.map(t => ({type:'info', text:t})), ...chassisNotes.map(t => ({type:'warning', text:t}))];
+  if (allNotes.length > 0) {
+    html += `
+    <div class="diag-section">
+      <div class="diag-section-title">Observations setup</div>
+      ${allNotes.map(n => `
+        <div class="diag-card">
+          <div class="diag-card-body">${n.text || n}</div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  // Gicleur
+  html += `
+    <div class="diag-section">
+      <div class="diag-section-title">Carburateur</div>
+      <div class="diag-card">
+        <div class="diag-card-title">Gicleur recommandé</div>
+        <div class="diag-card-body">
+          Pour ${data.temp}°C : <strong>${jetting}</strong><br>
+          <small style="color:var(--wd);font-size:.82rem;">Air chaud = moins dense = gicleur plus petit. Air froid = plus dense = gicleur plus grand.</small>
+        </div>
+      </div>
+    </div>`;
+
+  // Notes pilote
+  if (data.notes) {
+    html += `
+    <div class="diag-section">
+      <div class="diag-section-title">Tes notes</div>
+      <div class="diag-card">
+        <div class="diag-card-body" style="font-style:italic;color:var(--wd);">"${data.notes}"</div>
+      </div>
+    </div>`;
+  }
+
+  html += `
+    <div style="margin-top:8px;padding:16px;background:var(--b4);border-left:3px solid var(--gold);">
+      <div style="font-family:var(--fc);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Pour aller plus loin</div>
+      <div style="font-size:.88rem;color:var(--wd);line-height:1.65;">Le chatbot ci-dessus peut affiner ce diagnostic. Pose des questions spécifiques sur n'importe quel aspect du setup.</div>
+    </div>`;
+
+  document.getElementById('diag-result').innerHTML = html;
+}
+
+// ============================================================
+// SESSION HISTORY
+// ============================================================
+function saveSession(data, result) {
+  const session = {
+    id: Date.now(),
+    ts: new Date().toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    behavior: data.behavior,
+    trackState: data.trackState,
+    data, result
+  };
+  sessions.unshift(session);
+  if (sessions.length > 10) sessions = sessions.slice(0, 10);
+  localStorage.setItem('re_sessions', JSON.stringify(sessions));
+  renderHistory();
+}
+
+function renderHistory() {
+  const chips = document.getElementById('history-chips');
+  const hint = chips.parentElement.querySelector('span:last-child');
+  if (sessions.length === 0) {
+    chips.innerHTML = '';
+    if (hint) hint.style.display = '';
+    return;
+  }
+  if (hint) hint.style.display = 'none';
+  const labels = {
+    understeer_entry:'S/V entrée', understeer_mid:'S/V milieu',
+    oversteer_entry:'S/V entrée AR', oversteer_exit:'S/V sortie AR',
+    no_rotation:'Pas de rotation', too_much_rotation:'Trop de rotation',
+    good_entry_bad_exit:'Bonne entrée/mauvaise sortie',
+    general_lack_of_grip:'Manque de grip', balanced:'Équilibré'
+  };
+  chips.innerHTML = sessions.map((s,i) => `
+    <span class="history-chip ${i===0?'active':''}" onclick="loadSession(${i})" title="${s.ts}">
+      ${s.ts} — ${labels[s.behavior]||s.behavior}
+    </span>
+  `).join('');
+}
+
+function loadSession(idx) {
+  const s = sessions[idx];
+  if (!s) return;
+  document.querySelectorAll('.history-chip').forEach((c,i) => c.classList.toggle('active', i===idx));
+  // Restaurer les valeurs dans le formulaire
+  document.getElementById('temp-air').value = s.data.temp;
+  document.getElementById('val-temp-air').textContent = s.data.temp + '°C';
+  document.querySelector(`input[name="track-state"][value="${s.data.trackState}"]`).checked = true;
+  document.querySelector(`input[name="circuit-type"][value="${s.data.circuitType}"]`).checked = true;
+  document.getElementById('pres-av').value = s.data.presAv;
+  document.getElementById('val-pres-av').textContent = parseFloat(s.data.presAv).toFixed(2) + ' bar';
+  document.getElementById('pres-ar').value = s.data.presAr;
+  document.getElementById('val-pres-ar').textContent = parseFloat(s.data.presAr).toFixed(2) + ' bar';
+  document.querySelector(`input[name="voie-ar"][value="${s.data.voieAr}"]`).checked = true;
+  document.getElementById('chassis-stiff').value = s.data.chassisStiff;
+  document.getElementById('val-chassis-stiff').textContent = s.data.chassisStiff;
+  document.querySelector(`input[name="front-bar"][value="${s.data.frontBar}"]`).checked = true;
+  document.getElementById('behavior').value = s.data.behavior;
+  document.getElementById('intensity').value = s.data.intensity;
+  document.getElementById('val-intensity').textContent = s.data.intensity + '/10';
+  document.getElementById('pilot-notes').value = s.data.notes || '';
+  renderDiagnostic(s.result, s.data);
+  document.getElementById('diag-empty').style.display = 'none';
+  document.getElementById('diag-result').classList.add('visible');
+  switchTab('diag');
+}
+
+// ============================================================
+// CHATBOT
+// ============================================================
+function scrollChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendMsg(role, text) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-bubble">${text}</div>
+    <div class="msg-meta">${role === 'user' ? 'Toi' : 'Race Engineer AI'}</div>
+  `;
+  msgs.appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(div);
+  scrollChat();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  appendMsg('user', msg);
+  chatHistory.push({ role: 'user', content: msg });
+
+  showTyping();
+
+  // Construire la réponse IA côté client (knowledge-based)
+  setTimeout(() => {
+    removeTyping();
+    const response = generateChatResponse(msg, chatHistory);
+    appendMsg('ai', response);
+    chatHistory.push({ role: 'assistant', content: response });
+  }, 700 + Math.random() * 600);
+}
+
+function generateChatResponse(msg, history) {
+  const q = msg.toLowerCase();
+
+  // Détection intent
+  if (q.includes('sous-virage') || q.includes('underst')) {
+    return `Le sous-virage en karting a deux formes :<br><br>
+<strong>En entrée de virage</strong> — le front ne mord pas. Causes : pression AV trop haute, voie AV trop étroite, chasse insuffisante. Action N°1 : baisser la pression AV de 0.05 bar.<br><br>
+<strong>En milieu de virage</strong> — le kart pousse. Causes : châssis trop rigide (roue AR intérieure ne se décolle pas), pression AR trop basse. Action N°1 : assouplir le châssis (barre ronde ou retirer barre avant).<br><br>
+Lequel tu observes exactement ?`;
+  }
+
+  if (q.includes('survirage') || q.includes('overst') || q.includes('arrière part')) {
+    return `Le survirage en karting :<br><br>
+<strong>En entrée</strong> — l'arrière part au freinage/rotation. Pression AR trop haute ou chasse trop élevée. Baisser la pression AR de 0.05 bar en premier.<br><br>
+<strong>En sortie</strong> (accélération) — le pneu AR glisse sous les gaz. Pression AR trop basse ou châssis trop souple. Monter la pression AR.<br><br>
+<strong>Règle générale :</strong> le survirage, c'est le pneu AR qui arrive à sa limite avant que tu le lui demandes. Soit la pression est mauvaise, soit le châssis envoie trop de charge sur l'AR au mauvais moment.`;
+  }
+
+  if (q.includes('rotation') && (q.includes('pas') || q.includes('manque') || q.includes('ne pivote'))) {
+    return `Pas de rotation — c'est l'un des problèmes les plus fréquents.<br><br>
+<strong>Mécanisme :</strong> la rotation du kart vient du délestage de la roue arrière intérieure. Si elle reste au sol, le kart ne pivote pas. C'est mécanique, pas une question de volant.<br><br>
+<strong>Solutions par priorité :</strong><br>
+1. Plus d'axe dans le moyeu AR → plus rigide → délestage plus net<br>
+2. Resserrer le pare-chocs arrière → rigidifie le châssis<br>
+3. Monter légèrement la pression AR<br>
+4. Réduire la voie arrière (plus incisif)<br><br>
+<strong>Rappel :</strong> en no-grip, on rigidifie pour forcer la mécanique à travailler. C'est contre-intuitif mais c'est la loi du karting.`;
+  }
+
+  if (q.includes('pression') && (q.includes('pneu') || q.includes('bar'))) {
+    return `Sur la pression des pneus en karting :<br><br>
+<strong>Le principe clé :</strong> la pression froide ne vaut rien. C'est la pression chaude en charge qui compte. On vise un delta d'environ 0.15 bar entre froid et chaud.<br><br>
+<strong>Plages typiques :</strong><br>
+- Avant : 0.80 à 1.10 bar (froid)<br>
+- Arrière : 0.75 à 1.05 bar (froid)<br><br>
+<strong>Stratégie qualifs :</strong> sortir le plus tard possible des stands pour que le pneu soit déjà chaud au tour lancé. Pas de tours de chauffe perdus.<br><br>
+<strong>Trop haute :</strong> pneu dur, zone de contact réduite, rebondit sur bosses.<br>
+<strong>Trop basse :</strong> trop de déformation, surchauffe, sensation de "coton".`;
+  }
+
+  if (q.includes('chasse') || q.includes('caster')) {
+    return `La chasse (caster) en karting :<br><br>
+<strong>Principe :</strong> plus de chasse = plus de soulèvement de la roue AR intérieure en virage = rotation plus naturelle, mais moins de maniabilité directe.<br><br>
+<strong>Moins de chasse :</strong> circuits techniques, virages serrés, kart plus agile et maniable.<br><br>
+<strong>Plus de chasse :</strong> circuits rapides, grandes courbes, stabilité à haute vitesse.<br><br>
+<strong>En pluie :</strong> augmenter la chasse. La stabilité est critique sur surface glissante, et le soulèvement AR aide à trouver le grip disponible.<br><br>
+Réglage par les kits de caster ou les fusées (rondelles selon le châssis).`;
+  }
+
+  if (q.includes('barre') && (q.includes('avant') || q.includes('plate') || q.includes('ronde'))) {
+    return `La barre avant influence la rigidité du train avant :<br><br>
+<strong>Barre plate (section rectangulaire) :</strong> plus rigide. Transfert de charge plus rapide. Le train avant réagit plus vite. Utilisation : no-grip, piste froide.<br><br>
+<strong>Barre ronde (section circulaire) :</strong> plus souple. Absorbe mieux les irrégularités. Utilisation : high-grip, piste chaude.<br><br>
+<strong>Sans barre :</strong> maximum de souplesse du train avant. Réservé aux conditions de très fort grip.<br><br>
+<strong>À retenir :</strong> si le kart est trop rigide globalement et que tu ne veux pas toucher à l'axe AR, passer à la barre ronde est le premier geste simple.`;
+  }
+
+  if (q.includes('voie') && (q.includes('arrière') || q.includes('ar'))) {
+    return `La voie arrière (137.5 à 140cm en général) :<br><br>
+<strong>Voie étroite (137.5cm) :</strong> plus de grip, kart plus incisif et réactif. Le poids est plus concentré. Utilisation : no-grip, piste froide, circuits techniques.<br><br>
+<strong>Voie large (140cm) :</strong> plus stable, moins d'incisivité. Meilleur en ligne droite et grandes courbes. Utilisation : high-grip, piste chaude, circuits rapides.<br><br>
+<strong>Règle :</strong> voie étroite = kart pivote plus facilement. Voie large = kart plus stable mais moins agile. Commencer par les conditions pour décider.`;
+  }
+
+  if (q.includes('gicleur') || q.includes('carb') || q.includes('richesse') || q.includes('jet')) {
+    return `Le gicleur principal du carburateur :<br><br>
+<strong>Principe :</strong> la température de l'air détermine sa densité, donc la richesse du mélange nécessaire.<br><br>
+<strong>Température > 25°C :</strong> gicleur 120-125. Air chaud = moins dense = mélange trop riche → baisser le gicleur.<br><br>
+<strong>Température 15-25°C :</strong> gicleur 125-135. Zone standard.<br><br>
+<strong>Température < 15°C :</strong> gicleur 135-145. Air froid = plus dense = plus d'oxygène → augmenter le gicleur.<br><br>
+<strong>Danger trop maigre :</strong> surchauffe, coups, risque de gripage moteur.<br>
+<strong>Trop riche :</strong> perte de puissance, bougie noire, surconsommation.`;
+  }
+
+  if (q.includes('pluie') || q.includes('mouillé') || q.includes('wet')) {
+    return `Setup pour la pluie :<br><br>
+<strong>Châssis :</strong> assouplir (barre ronde ou sans barre) pour chercher le grip disponible sur surface glissante.<br><br>
+<strong>Chasse :</strong> augmenter. La stabilité est critique en pluie.<br><br>
+<strong>Voie arrière :</strong> large pour plus de stabilité.<br><br>
+<strong>Pression pneus :</strong> basse (la piste mouillée génère moins de chaleur dans le pneu → moins de montée en pression).<br><br>
+<strong>Trajectoire :</strong> fuir la ligne normale (pleine de caoutchouc lisse glissant). Chercher le bitume propre et les bandes blanches au freinage. Le grip est hors trajectoire habituelle.`;
+  }
+
+  if (q.includes('no-grip') || q.includes('no grip') || q.includes('piste froide') || q.includes('pas de grip')) {
+    return `Philosophie no-grip (piste froide ou propre) :<br><br>
+<strong>Contre-intuitif mais essentiel :</strong> en no-grip, on rigidifie le châssis. Pas l'inverse.<br><br>
+<strong>Pourquoi ?</strong> La rotation du kart vient du délestage de la roue AR intérieure. Si la piste n'offre pas de grip pour provoquer ce délestage, la rigidité du châssis doit le forcer mécaniquement.<br><br>
+<strong>Actions :</strong><br>
+- Barre avant plate<br>
+- Plus d'axe dans le moyeu AR<br>
+- Resserrer le pare-chocs AR<br>
+- Voie arrière étroite (137.5)<br>
+- Garde au sol basse<br><br>
+C'est la philosophie OTK. Certains châssis utilisent la rigidité comme outil de grip.`;
+  }
+
+  if (q.includes('axe') || (q.includes('moyeu') && q.includes('arrière'))) {
+    return `L'axe arrière et le moyeu en karting :<br><br>
+<strong>Principe :</strong> la longueur d'axe dans le moyeu détermine la rigidité latérale arrière.<br><br>
+<strong>Plus d'axe dans le moyeu :</strong> plus rigide → roue AR intérieure se décolle moins facilement → moins de rotation → adapté au no-grip, piste froide.<br><br>
+<strong>Moins d'axe dans le moyeu :</strong> plus souple → roue AR se décolle plus facilement → plus de rotation → adapté au high-grip, piste chaude.<br><br>
+<strong>Types d'axe :</strong> souple, médium, dur selon le marquage du fabricant. Modifier la longueur est plus immédiat que changer l'axe complet.<br><br>
+C'est l'un des réglages les plus puissants et les plus rapides à tester.`;
+  }
+
+  if (q.includes('rotax') || q.includes('dd2') || q.includes('couronne') || q.includes('transmission')) {
+    return `Transmission Rotax DD2 :<br><br>
+<strong>Règle des 100 :</strong> couronne + contre-pignon = 100 (pour garder la chaîne correcte).<br><br>
+<strong>Plage couronne :</strong> 33 à 36 dents.<br><br>
+<strong>Petite couronne (33) :</strong> rapport court. Meilleures accélérations, reprises plus vives. Circuits avec beaucoup de virages.<br><br>
+<strong>Grande couronne (36) :</strong> rapport long. Vitesse de pointe plus haute. Circuits rapides avec longues lignes droites.<br><br>
+Sur les karts monorapports conventionnels, la logique s'inverse légèrement selon le type de transmission — à confirmer selon ton kart.`;
+  }
+
+  if (q.includes('grief') || q.includes('pilotage') || q.includes('freinage') || q.includes('volant') || q.includes('light hand') || q.includes('hands')) {
+    return `Sur la technique de pilotage (chapitres du guide) :<br><br>
+<strong>Light hands (Ch.3) :</strong> le volant est un capteur, pas une commande. Serrer = châssis figé = information perdue. Les mains légères permettent de ressentir ce que fait réellement le châssis.<br><br>
+<strong>Freinage dégressif (Ch.4) :</strong> pic de pression à l'entrée → relâché progressif. Maintenir le frein = roue AR intérieure ne se décharge pas = kart refuse de pivoter. 2-3 dixièmes perdus par virage si raté.<br><br>
+<strong>Rotation (Ch.5) :</strong> c'est le délestage de la roue AR intérieure via la pédale de frein. Pas le volant. Fenêtre de quelques dixièmes.<br><br>
+<strong>Point d'accélération (Ch.6) :</strong> remettre les gaz avant la fin de rotation = roues dans le mauvais axe = kart tout droit = 3 dixièmes perdus × 15 virages = 4 secondes au tour.`;
+  }
+
+  // Réponse générique
+  const topics = [
+    'pression pneus', 'barre avant', 'axe arrière', 'voie arrière',
+    'chasse', 'gicleur', 'rotation', 'sous-virage', 'survirage', 'pluie'
+  ];
+  return `Je n'ai pas saisi exactement ta question. Je peux t'aider sur :<br><br>
+${topics.map(t => `• <strong>${t}</strong>`).join('<br>')}<br><br>
+Reformule ou sois plus précis sur le comportement que tu observes (entrée / milieu / sortie de virage, etc.) et je te donne un diagnostic.`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderHistory();
+switchTab('diag');
+</script>
+</body>
+</html>
