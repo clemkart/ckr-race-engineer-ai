@@ -1754,7 +1754,7 @@ function applyRecommendedSetup(applyObj) {
 // =============================================
 // CHATBOT — MODE LIBRE
 // =============================================
-function sendChat() {
+async function sendChat() {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if(!msg) return;
@@ -1770,10 +1770,55 @@ function sendChat() {
   addMsg(msg, 'user');
   document.getElementById('chat-suggestions').style.display = 'none';
 
-  setTimeout(() => {
-    const response = getChatResponse(msg);
-    addMsg(response, 'bot');
-  }, 300);
+  // Message de chargement
+  const loadingId = 'loading-' + Date.now();
+  const area = document.getElementById('chat-messages');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg msg-bot';
+  loadingDiv.id = loadingId;
+  loadingDiv.innerHTML = '<em style="color:var(--text-dim);">⏳ Analyse en cours...</em>';
+  area.appendChild(loadingDiv);
+  area.scrollTop = area.scrollHeight;
+
+  try {
+    // Collecte le contexte actuel de la session
+    const context = collectData();
+
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, context })
+    });
+
+    const data = await res.json();
+
+    // Supprime le message de chargement
+    document.getElementById(loadingId)?.remove();
+
+    if(data.message) {
+      let botMsg = data.message;
+
+      // Si des réglages sont à appliquer, ajoute un bouton
+      if(data.apply && Object.keys(data.apply).length > 0) {
+        const applyJson = JSON.stringify(data.apply).replace(/"/g, '&quot;');
+        botMsg += `<br><br><button class="apply-setup-btn" onclick='applyRecommendedSetup(${JSON.stringify(data.apply)})'>⚡ Appliquer ces réglages</button>`;
+      }
+
+      addMsg(botMsg, 'bot');
+
+      // Auto-appliquer si confidence élevée (optionnel)
+      // if(data.apply && Object.keys(data.apply).length > 0) applyRecommendedSetup(data.apply);
+    } else {
+      addMsg('Réponse inattendue du serveur. Réessaie.', 'bot');
+    }
+
+  } catch(err) {
+    document.getElementById(loadingId)?.remove();
+    console.error('Erreur API:', err);
+    // Fallback sur le système keywords si l'API est indisponible
+    const fallback = getChatResponse(msg);
+    addMsg('⚠️ <em>Mode hors-ligne</em> — ' + fallback, 'bot');
+  }
 }
 
 function sendSuggestion(text) {
@@ -1804,40 +1849,4 @@ function getChatResponse(msg) {
     }
   }
 
-  // Match direct
-  for(const [topic, data] of Object.entries(KB.chatbot)) {
-    if(data.keywords.some(kw => msgLower.includes(kw))) {
-      return data.response;
-    }
-  }
-
-  if(msgLower.includes('merci') || msgLower.includes('cool') || msgLower.includes('parfait') || msgLower.includes('top')) {
-    return 'Avec plaisir ! 🏎️ N\'hésite pas si tu veux lancer un diagnostic guidé ou poser d\'autres questions.';
-  }
-  if(msgLower.includes('salut') || msgLower.includes('bonjour') || msgLower.includes('hello')) {
-    return 'Salut ! Prêt à analyser ton setup. Décris ton problème ou lance un <strong>diagnostic guidé</strong>.';
-  }
-  if(msgLower.includes('diagnostic') || msgLower.includes('aide') || msgLower.includes('help')) {
-    return `Je peux t'aider de deux façons :<br><br>
-<strong>1. Diagnostic guidé</strong> → je te pose 4 questions et je propose un setup précis à appliquer en 1 clic.<br>
-<strong>2. Question libre</strong> → demande-moi n'importe quoi sur les réglages.<br><br>
-<button class="apply-setup-btn" onclick="startDiagSession()">🔍 Lancer le diagnostic guidé</button>`;
-  }
-
-  return `Je n'ai pas de réponse précise pour "${msg}". Essaie de décrire le comportement (sous-virage, survirage, manque de grip...) ou <button class="apply-setup-btn" onclick="startDiagSession()" style="padding:4px 10px;font-size:11px;">lance le diagnostic guidé</button>`;
-}
-
-// =============================================
-// INIT
-// =============================================
-document.addEventListener('DOMContentLoaded', () => {
-  updateGripDesc('medium');
-  updateGicleurReco();
-  updateStrategyTip();
-  updateChasse();
-  updatePincement();
-  renderHistory();
-});
-</script>
-</body>
-</html>
+  //
