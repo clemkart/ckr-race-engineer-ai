@@ -1849,4 +1849,37 @@ function getChatResponse(msg) {
     }
   }
 
-  //
+    // Match direct KB
+  for(const [topic, data] of Object.entries(KB.chatbot)) {
+    if(data.keywords.some(kw => msgLower.includes(kw))) {
+      return data.response;
+    }
+  }
+
+  if(msgLower.includes('merci') || msgLower.includes('cool') || msgLower.includes('parfait') || msgLower.includes('top')) {
+    return 'Avec plaisir ! 🏎️ N\'hésite pas si tu veux lancer un diagnostic guidé ou poser d\'autres questions.';
+  }
+  if(msgLower.includes('salut') || msgLower.includes('bonjour') || msgLower.includes('hello')) {
+    return 'Salut ! Prêt à analyser ton setup. Décris ton problème ou lance un <strong>diagnostic guidé</strong>.';
+  }
+  if(msgLower.includes('diagnostic') || msgLower.includes('aide') || msgLower.includes('help')) {
+    return `Je peux t'aider de deux façons :<br><br><strong>1. Diagnostic guidé</strong> → je te pose 4 questions et je propose un setup précis à appliquer en 1 clic.<br><strong>2. Question libre</strong> → demande-moi n'importe quoi sur les réglages.<br><br><button class="apply-setup-btn" onclick="startDiagSession()">🔍 Lancer le diagnostic guidé</button>`;
+  }
+
+  return `Je n'ai pas de réponse précise pour "\${msg}". Essaie de décrire le comportement ou <button class="apply-setup-btn" onclick="startDiagSession()" style="padding:4px 10px;font-size:11px;">lance le diagnostic guidé</button>`;
+}
+
+// =============================================
+// INIT
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+  updateGripDesc('medium');
+  updateGicleurReco();
+  updateStrategyTip();
+  updateChasse();
+  updatePincement();
+  renderHistory();
+});
+</script>
+</body>
+</html>
