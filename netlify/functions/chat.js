@@ -1,6 +1,7 @@
 const Anthropic = require("@anthropic-ai/sdk");
 
 exports.handler = async (event) => {
+  // CORS headers
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
@@ -8,6 +9,7 @@ exports.handler = async (event) => {
     "Content-Type": "application/json",
   };
 
+  // Preflight
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
   }
@@ -25,7 +27,9 @@ exports.handler = async (event) => {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const contextStr = context ? `
+    // Contexte réglages actuels formaté pour le prompt
+    const contextStr = context
+      ? `
 Contexte actuel du pilote :
 - Grip piste : ${context.grip || "non renseigné"}
 - Météo : ${context.meteo || "non renseigné"}
@@ -49,7 +53,8 @@ Contexte actuel du pilote :
 - Couronne : ${context.couronne || "?"} dents
 - Gicleur : ${context.gicleur || "?"}
 - Notes pilote : ${context.notes || "aucune"}
-` : "Aucun contexte de session fourni.";
+`
+      : "Aucun contexte de session fourni.";
 
     const systemPrompt = `Tu es Race Engineer AI, un ingénieur de course karting expert spécialisé en châssis OTK (Tony Kart, Kosmic, Exprit, Formula K).
 
@@ -63,8 +68,9 @@ Tu as une connaissance approfondie de :
 
 Règles de réponse :
 1. Réponds TOUJOURS en JSON valide avec deux clés : "message" et "apply"
-2. "message" : explication claire en français, max 150 mots, avec le POURQUOI mécanique
-3. "apply" : objet JSON avec UNIQUEMENT les réglages à modifier (laisser vide {} si aucun réglage)
+2. "message" : explication claire en français, max 150 mots, avec le POURQUOI mécanique de chaque réglage proposé
+3. "apply" : objet JSON avec UNIQUEMENT les réglages à modifier (laisser vide {} si aucun réglage à appliquer)
+4. IMPORTANT : Ne jamais entourer le JSON de backticks ou de balises markdown. Retourner UNIQUEMENT le JSON brut.
 
 Format "apply" disponible :
 {
@@ -80,9 +86,20 @@ Format "apply" disponible :
   "gardeAr": "bas" | "medium" | "haut"
 }
 
+Exemple de réponse valide :
+{
+  "message": "Ton kart pousse en entrée de virage rapide parce que l'avant manque de grip. On va élargir la voie avant pour augmenter la charge sur les roues AV et ajouter de la chasse pour améliorer le retour de direction. La barre ronde va rigidifier légèrement l'avant sans bloquer le châssis.",
+  "apply": {
+    "voieAv": 5,
+    "chasse": 1,
+    "barre": "ronde"
+  }
+}
+
 ${contextStr}
 
-Si question théorique sans réglages à faire, réponds avec "apply": {}.`;
+Si le pilote pose une question théorique sans demander de réglages spécifiques, réponds avec "apply": {}.
+Si tu n'es pas certain d'un réglage, dis-le clairement et propose une direction à tester.`;
 
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
@@ -91,15 +108,26 @@ Si question théorique sans réglages à faire, réponds avec "apply": {}.`;
       messages: [{ role: "user", content: message }],
     });
 
+    // Parse la réponse JSON de Claude
     let parsed;
     try {
-      parsed = JSON.parse(response.content[0].text);
+      // Nettoyer les éventuels backticks markdown (```json ... ```)
+      let raw = response.content[0].text.trim();
+      raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      parsed = JSON.parse(raw);
     } catch (e) {
-      parsed = { message: response.content[0].text, apply: {} };
+      // Si Claude ne répond pas en JSON, on encapsule le texte brut
+      parsed = {
+        message: response.content[0].text,
+        apply: {},
+      };
     }
 
-    return { statusCode: 200, headers, body: JSON.stringify(parsed) };
-
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(parsed),
+    };
   } catch (err) {
     console.error("Erreur chat function:", err);
     return {
