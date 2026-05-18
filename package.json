@@ -1,0 +1,8 @@
+{
+  "name": "race-engineer-ai",
+  "version": "1.0.0",
+  "description": "Race Engineer AI — Karting setup assistant powered by Claude",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}
