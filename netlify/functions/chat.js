@@ -1,5 +1,23 @@
 const Anthropic = require("@anthropic-ai/sdk");
 
+// Rate limiting en mémoire (reset à chaque cold start Netlify)
+// Limite : 30 requêtes par IP par fenêtre de 60 secondes
+const rateLimitMap = new Map();
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60 * 1000;
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 exports.handler = async (event) => {
   // CORS headers
   const headers = {
@@ -16,6 +34,16 @@ exports.handler = async (event) => {
 
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
+  }
+
+  // Rate limiting par IP
+  const clientIp = event.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
+  if (!checkRateLimit(clientIp)) {
+    return {
+      statusCode: 429,
+      headers,
+      body: JSON.stringify({ message: "Trop de requêtes. Attends quelques secondes.", apply: {} }),
+    };
   }
 
   try {
@@ -103,7 +131,7 @@ Si tu n'es pas certain d'un réglage, dis-le clairement et propose une direction
 
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 600,
+      max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: message }],
     });

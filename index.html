@@ -1675,26 +1675,65 @@ function buildRecommendations(phase, behavior, grip, intensity) {
 }
 
 function applyRecommendedSetup(applyObj) {
-  let applied = [];
-
-  if(applyObj.barre) {
-    const barreMap = {sans:'sans', ronde:'ronde', plate:'plate', plateau:'plateau'};
-    const target = barreMap[applyObj.barre];
-    if(target) {
-      const chips = document.querySelectorAll('input[name="barre"]');
-      chips.forEach(c => {
-        const chip = c.closest('.radio-chip');
-        if(c.value === target) {
-          c.checked = true;
-          document.querySelectorAll('input[name="barre"]').forEach(x => x.closest('.radio-chip').classList.remove('selected'));
-          chip.classList.add('selected');
-          applied.push(`Barre avant → ${applyObj.barre}`);
-        }
-      });
-    }
+  // Validation de base — si applyObj est invalide on sort proprement
+  if(!applyObj || typeof applyObj !== 'object') {
+    addMsg('Impossible d\'appliquer les réglages : format invalide.', 'bot');
+    return;
   }
 
-  if(applyObj.chasse !== undefined) {
+  let applied = [];
+
+  // Fonction utilitaire pour sélectionner un chip radio
+  function selectRadioChip(name, value, label) {
+    const validVal = String(value).trim().toLowerCase();
+    const chips = document.querySelectorAll(`input[name="${name}"]`);
+    let found = false;
+    chips.forEach(c => {
+      if(c.value === validVal) {
+        c.checked = true;
+        document.querySelectorAll(`input[name="${name}"]`).forEach(x => x.closest('.radio-chip').classList.remove('selected'));
+        c.closest('.radio-chip').classList.add('selected');
+        applied.push(`${label} → ${value}`);
+        found = true;
+      }
+    });
+    return found;
+  }
+
+  // Barre avant
+  if(applyObj.barre && ['sans','ronde','plate','plateau'].includes(applyObj.barre)) {
+    selectRadioChip('barre', applyObj.barre, 'Barre avant');
+  }
+
+  // Arbre de transmission
+  if(applyObj.arbre && ['court','standard','tendre','medium','dur'].includes(applyObj.arbre)) {
+    selectRadioChip('arbre', applyObj.arbre, 'Arbre');
+  }
+
+  // Moyeux
+  if(applyObj.moyeux && ['courts','medium','longs'].includes(applyObj.moyeux)) {
+    // Le HTML utilise 'court'/'medium'/'long' sans 's' pour certaines valeurs — on normalise
+    const moyeuxMap = {'courts':'court','medium':'medium','longs':'long'};
+    selectRadioChip('moyeux', moyeuxMap[applyObj.moyeux] || applyObj.moyeux, 'Moyeux');
+  }
+
+  // Parechocs
+  if(applyObj.parechocs && ['desserre','serre'].includes(applyObj.parechocs)) {
+    selectRadioChip('parechocs', applyObj.parechocs, 'Pare-chocs');
+  }
+
+  // Garde au sol AV
+  if(applyObj.gardeAv && ['bas','medium','haut'].includes(applyObj.gardeAv)) {
+    selectRadioChip('garde-av', applyObj.gardeAv, 'Garde AV');
+  }
+
+  // Garde au sol AR
+  if(applyObj.gardeAr && ['bas','medium','haut'].includes(applyObj.gardeAr)) {
+    selectRadioChip('garde-ar', applyObj.gardeAr, 'Garde AR');
+  }
+
+  // Chasse (delta)
+  if(applyObj.chasse !== undefined && typeof applyObj.chasse === 'number') {
     const el = document.getElementById('chasse');
     const newVal = Math.max(-1, Math.min(4, parseInt(el.value) + applyObj.chasse));
     el.value = newVal;
@@ -1702,43 +1741,34 @@ function applyRecommendedSetup(applyObj) {
     applied.push(`Chasse → ${newVal}`);
   }
 
-  if(applyObj.voieAr !== undefined) {
+  // Voie AR (delta en cm)
+  if(applyObj.voieAr !== undefined && typeof applyObj.voieAr === 'number') {
     const el = document.getElementById('voie-ar');
     const newVal = Math.max(135, Math.min(141, parseFloat(el.value) + applyObj.voieAr));
-    el.value = newVal;
+    el.value = newVal.toFixed(1);
     updateSliderVal('voie-ar','val-voie-ar',' cm');
     applied.push(`Voie AR → ${newVal.toFixed(1)} cm`);
   }
 
-  if(applyObj.voieAv !== undefined) {
+  // Voie AV (valeur absolue 0-6 bagues)
+  if(applyObj.voieAv !== undefined && typeof applyObj.voieAv === 'number') {
     const el = document.getElementById('voie-av');
-    const newVal = Math.max(0, Math.min(6, parseInt(el.value) + applyObj.voieAv));
+    const newVal = Math.max(0, Math.min(6, Math.round(applyObj.voieAv)));
     el.value = newVal;
     updateSliderVal('voie-av','val-voie-av',' bagues');
     applied.push(`Voie AV → ${newVal} bagues`);
   }
 
-  if(applyObj.arbre) {
-    const chips = document.querySelectorAll('input[name="arbre"]');
-    chips.forEach(c => {
-      const chip = c.closest('.radio-chip');
-      if(c.value === applyObj.arbre) {
-        c.checked = true;
-        document.querySelectorAll('input[name="arbre"]').forEach(x => x.closest('.radio-chip').classList.remove('selected'));
-        chip.classList.add('selected');
-        applied.push(`Arbre → ${applyObj.arbre}`);
-      }
-    });
-  }
-
-  if(applyObj.pincement !== undefined) {
+  // Pincement (valeur absolue -3 à +3)
+  if(applyObj.pincement !== undefined && typeof applyObj.pincement === 'number') {
     const el = document.getElementById('pincement');
-    el.value = applyObj.pincement;
+    const newVal = Math.max(-3, Math.min(3, Math.round(applyObj.pincement)));
+    el.value = newVal;
     updatePincement();
-    applied.push(`Pincement → ${applyObj.pincement}`);
+    applied.push(`Pincement → ${newVal}`);
   }
 
-  // Switch to chassis tab to show changes
+  // Résultat
   if(applied.length > 0) {
     setTimeout(() => {
       const confirmMsg = `<strong style="color:var(--green)">✅ Réglages appliqués dans l'interface :</strong><br><br>`
@@ -1747,7 +1777,7 @@ function applyRecommendedSetup(applyObj) {
       addMsg(confirmMsg, 'bot');
     }, 200);
   } else {
-    addMsg(`Aucun réglage automatique disponible pour ce cas. Consulte les recommandations ci-dessus et ajuste manuellement.`, 'bot');
+    addMsg(`Aucun réglage automatique applicable. Consulte les recommandations ci-dessus et ajuste manuellement.`, 'bot');
   }
 }
 
@@ -1790,24 +1820,35 @@ async function sendChat() {
       body: JSON.stringify({ message: msg, context })
     });
 
-    const data = await res.json();
-
     // Supprime le message de chargement
     document.getElementById(loadingId)?.remove();
+
+    // Gestion des erreurs HTTP explicites
+    if(!res.ok) {
+      if(res.status === 429) {
+        addMsg('⚠️ Trop de requêtes. Attends quelques secondes et réessaie.', 'bot');
+      } else if(res.status === 500) {
+        addMsg('⚠️ Erreur serveur. Si le problème persiste, vérifie que la clé API est bien configurée dans Netlify.', 'bot');
+      } else {
+        addMsg(`⚠️ Erreur ${res.status}. Réessaie dans un instant.`, 'bot');
+      }
+      return;
+    }
+
+    const data = await res.json();
 
     if(data.message) {
       let botMsg = data.message;
 
-      // Si des réglages sont à appliquer, ajoute un bouton
+      // Si des réglages sont à appliquer, ajoute un bouton (via closure pour éviter XSS)
       if(data.apply && Object.keys(data.apply).length > 0) {
-        const applyJson = JSON.stringify(data.apply).replace(/"/g, '&quot;');
-        botMsg += `<br><br><button class="apply-setup-btn" onclick='applyRecommendedSetup(${JSON.stringify(data.apply)})'>⚡ Appliquer ces réglages</button>`;
+        const applyId = 'apply-' + Date.now();
+        window._pendingApply = window._pendingApply || {};
+        window._pendingApply[applyId] = data.apply;
+        botMsg += `<br><br><button class="apply-setup-btn" onclick='applyRecommendedSetup(window._pendingApply["${applyId}"])'>⚡ Appliquer ces réglages</button>`;
       }
 
       addMsg(botMsg, 'bot');
-
-      // Auto-appliquer si confidence élevée (optionnel)
-      // if(data.apply && Object.keys(data.apply).length > 0) applyRecommendedSetup(data.apply);
     } else {
       addMsg('Réponse inattendue du serveur. Réessaie.', 'bot');
     }
@@ -1817,7 +1858,7 @@ async function sendChat() {
     console.error('Erreur API:', err);
     // Fallback sur le système keywords si l'API est indisponible
     const fallback = getChatResponse(msg);
-    addMsg('⚠️ <em>Mode hors-ligne</em> — ' + fallback, 'bot');
+    addMsg('⚠️ <em>Connexion impossible au serveur.</em> Mode hors-ligne — ' + fallback, 'bot');
   }
 }
 
